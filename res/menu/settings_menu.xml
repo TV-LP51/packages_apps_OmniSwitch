@@ -19,6 +19,6 @@
     <item
         android:id="@+id/toggle_service"
         android:actionLayout="@layout/action_bar_switch"
-		android:background="@*android:color/darkkat_blue_grey"
+		android:background="#000000"
         android:showAsAction="always"/>
 </menu>
