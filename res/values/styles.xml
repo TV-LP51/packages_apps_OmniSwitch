@@ -50,19 +50,26 @@
     </style>
 
     <style name="ShowcaseView.Light">
-        <item name="sv_titleTextColor">#33B5E5</item>
-        <item name="sv_detailTextColor">#444</item>
-        <item name="sv_backgroundColor">#3333B5E5</item>
+        <item name="sv_titleTextColor">#009688</item>
+        <item name="sv_detailTextColor">#ffffff</item>
+        <item name="sv_backgroundColor">#000000</item>
         <item name="sv_buttonText">@android:string/ok</item>
     </style>
 
     <style name="ShowcaseView">
-        <item name="sv_titleTextColor">#33B5E5</item>
+        <item name="sv_titleTextColor">#009688</item>
         <item name="sv_detailTextColor">#FFFFFF</item>
-        <item name="sv_backgroundColor">#F0333333</item>
+        <item name="sv_backgroundColor">#F0000000</item>
         <item name="sv_buttonText">@android:string/ok</item>
     </style>
 
-    <style name="PopupMenu" parent="@android:style/Theme.Material.Light">
+    <style name="PopupMenu" parent="@android:style/Theme.Material">
+    </style>
+
+    <style name="ValidusMaterialTheme" parent="@android:style/Theme.Material">
+        <item name="android:colorBackground">@*android:drawable/darkkat_bg_blue_grey</item>
+        <item name="android:colorAccent">@*android:color/accent_material_light</item>
+        <item name="android:colorPrimary">@*android:color/material_blue_grey_900</item>
+        <item name="android:colorPrimaryDark">@*android:color/material_blue_grey_950</item>
     </style>
 </resources>
