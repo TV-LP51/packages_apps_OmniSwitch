@@ -28,128 +28,159 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.LightingColorFilter;
 import android.graphics.Paint;
+import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.VectorDrawable;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
+
+import java.util.List;
+import java.util.Collections;
 
 public class BitmapUtils {
-    public static BitmapDrawable rotate(Resources resources, Drawable image, int deg) {
+    public static Drawable rotate(Resources resources, Drawable image, int deg) {
+        if (!(image instanceof BitmapDrawable)) {
+            return image;
+        }
+        final Canvas canvas = new Canvas();
+        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
+                Paint.FILTER_BITMAP_FLAG));
+
         Bitmap b = ((BitmapDrawable) image).getBitmap();
         Bitmap bmResult = Bitmap.createBitmap(b.getWidth(), b.getHeight(),
                 Bitmap.Config.ARGB_8888);
-        Canvas tempCanvas = new Canvas(bmResult);
-        tempCanvas.rotate(deg, b.getWidth() / 2, b.getHeight() / 2);
-        tempCanvas.drawBitmap(b, 0, 0, null);
+        canvas.setBitmap(bmResult);
+        canvas.rotate(deg, b.getWidth() / 2, b.getHeight() / 2);
+        canvas.drawBitmap(b, 0, 0, null);
         return new BitmapDrawable(resources, bmResult);
     }
 
-    public static BitmapDrawable resize(Resources resources, Drawable image, int iconSize, int borderSize, float density) {
+    public static Drawable resize(Resources resources, Drawable image,
+            int iconSize, int borderSize, float density) {
         int size = Math.round(iconSize * density);
         int border = Math.round(borderSize * density);
+        final Canvas canvas = new Canvas();
+        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
+                Paint.FILTER_BITMAP_FLAG));
 
-        Bitmap b = ((BitmapDrawable) image).getBitmap();
-
-        // create a border around the icon
-        Bitmap bmResult = Bitmap.createBitmap(size + border, size + border,
-                Bitmap.Config.ARGB_8888);
-        Canvas tempCanvas = new Canvas(bmResult);
-
-        Bitmap bitmapResized = Bitmap.createScaledBitmap(b, size,
-                size, true);
-        tempCanvas.drawBitmap(bitmapResized, border/2, border/2, null);
-        return new BitmapDrawable(resources, bmResult);
+        if (image instanceof BitmapDrawable) {
+            Bitmap b = ((BitmapDrawable) image).getBitmap();
+            // create a border around the icon
+            Bitmap bmResult = Bitmap.createBitmap(size + border, size + border,
+                    Bitmap.Config.ARGB_8888);
+            canvas.setBitmap(bmResult);
+            Bitmap bitmapResized = Bitmap.createScaledBitmap(b, size, size,
+                    true);
+            canvas.drawBitmap(bitmapResized, border / 2, border / 2, null);
+            return new BitmapDrawable(resources, bmResult);
+        } else if (image instanceof VectorDrawable) {
+            // create a border around the icon
+            Bitmap bmResult = Bitmap.createBitmap(size + border, size + border,
+                    Bitmap.Config.ARGB_8888);
+            canvas.setBitmap(bmResult);
+            Drawable d = image.mutate();
+            d.setBounds(border / 2, border / 2, size, size);
+            d.draw(canvas);
+            return new BitmapDrawable(resources, bmResult);
+        }
+        return image;
     }
 
-    public static BitmapDrawable resize(Resources resources, Drawable image, int iconSize, float density) {
+    public static Drawable resize(Resources resources, Drawable image,
+            int iconSize, float density) {
         int size = Math.round(iconSize * density);
+        final Canvas canvas = new Canvas();
+        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
+                Paint.FILTER_BITMAP_FLAG));
 
-        Bitmap b = ((BitmapDrawable) image).getBitmap();
-
-        Bitmap bmResult = Bitmap.createBitmap(size, size,
-                Bitmap.Config.ARGB_8888);
-        Canvas tempCanvas = new Canvas(bmResult);
-
-        Bitmap bitmapResized = Bitmap.createScaledBitmap(b, size,
-                size, true);
-        tempCanvas.drawBitmap(bitmapResized, 0, 0, null);
-        return new BitmapDrawable(resources, bmResult);
+        if (image instanceof BitmapDrawable) {
+            Bitmap b = ((BitmapDrawable) image).getBitmap();
+            Bitmap bmResult = Bitmap.createBitmap(size, size,
+                    Bitmap.Config.ARGB_8888);
+            canvas.setBitmap(bmResult);
+            Bitmap bitmapResized = Bitmap.createScaledBitmap(b, size, size, true);
+            canvas.drawBitmap(bitmapResized, 0, 0, null);
+            return new BitmapDrawable(resources, bmResult);
+        } else if (image instanceof VectorDrawable) {
+            Bitmap bmResult = Bitmap.createBitmap(size, size,
+                    Bitmap.Config.ARGB_8888);
+            canvas.setBitmap(bmResult);
+            Drawable d = image.mutate();
+            d.setBounds(0, 0, size, size);
+            d.draw(canvas);
+            return new BitmapDrawable(resources, bmResult);
+        }
+        return image;
     }
 
-    public static BitmapDrawable colorize(Resources resources, int color, Drawable image) {
-        Bitmap b = ((BitmapDrawable) image).getBitmap();
-        BitmapDrawable b1 = new BitmapDrawable(resources, b);
+    public static Drawable colorize(Resources resources, int color,
+            Drawable image) {
         // remove any alpha
-        color = color &~ 0xff000000;
+        color = color & ~0xff000000;
         color = color | 0xff000000;
-        b1.setColorFilter(color, Mode.SRC_ATOP);
-        return b1;
+
+        if (image instanceof BitmapDrawable || image instanceof VectorDrawable) {
+            Drawable d = image.mutate();
+            d.setColorFilter(color, Mode.SRC_ATOP);
+            return d;
+        }
+        return image;
     }
 
-    public static BitmapDrawable shadow(Resources resources, Drawable image) {
+    public static Drawable shadow(Resources resources, Drawable image) {
+        if (!(image instanceof BitmapDrawable)) {
+            return image;
+        }
         Bitmap b = ((BitmapDrawable) image).getBitmap();
 
-        BlurMaskFilter blurFilter = new BlurMaskFilter(5, BlurMaskFilter.Blur.OUTER);
+        BlurMaskFilter blurFilter = new BlurMaskFilter(5,
+                BlurMaskFilter.Blur.OUTER);
         Paint shadowPaint = new Paint();
         shadowPaint.setMaskFilter(blurFilter);
 
         int[] offsetXY = new int[2];
         Bitmap b2 = b.extractAlpha(shadowPaint, offsetXY);
 
-        Bitmap bmResult = Bitmap.createBitmap(b.getWidth(), b.getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap bmResult = Bitmap.createBitmap(b.getWidth(), b.getHeight(),
+                Bitmap.Config.ARGB_8888);
 
-        Canvas c = new Canvas(bmResult);
-        c.drawBitmap(b2, 0, 0, null);
-        c.drawBitmap(b, -offsetXY[0], -offsetXY[1], null);
+        final Canvas canvas = new Canvas();
+        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
+                Paint.FILTER_BITMAP_FLAG));
+
+        canvas.setBitmap(bmResult);
+        canvas.drawBitmap(b2, 0, 0, null);
+        canvas.drawBitmap(b, -offsetXY[0], -offsetXY[1], null);
 
         return new BitmapDrawable(resources, bmResult);
-    }
-
-    public static BitmapDrawable glow(Resources resources, int glowColor, Drawable src) {
-        Bitmap b = ((BitmapDrawable) src).getBitmap();
-
-        // An added margin to the initial image
-        int margin = 0;
-        int halfMargin = margin / 2;
-
-        // The glow radius
-        int glowRadius = 24;
-
-        // Extract the alpha from the source image
-        Bitmap alpha = b.extractAlpha();
-
-        // The output bitmap (with the icon + glow)
-        Bitmap bmp = Bitmap.createBitmap(b.getWidth() + margin,
-                b.getHeight() + margin, Bitmap.Config.ARGB_8888);
-
-        // The canvas to paint on the image
-        Canvas canvas = new Canvas(bmp);
-
-        Paint paint = new Paint();
-        paint.setColor(glowColor);
-
-        // Outer glow
-        ColorFilter emphasize = new LightingColorFilter(glowColor, 1);
-        paint.setColorFilter(emphasize);
-        canvas.drawBitmap(b, halfMargin, halfMargin, paint);
-        paint.setColorFilter(null);
-        paint.setMaskFilter(new BlurMaskFilter(glowRadius, Blur.OUTER));
-        canvas.drawBitmap(alpha, halfMargin, halfMargin, paint);
-
-        return new BitmapDrawable(resources, bmp);
     }
 
     public static Drawable getDefaultActivityIcon(Context context) {
         return context.getResources().getDrawable(R.drawable.ic_default);
     }
 
-    public static BitmapDrawable compose(Resources resources, Drawable icon, Context context, Drawable iconBack,
-            Drawable iconMask, Drawable iconUpon, float scale) {
-        Bitmap b = ((BitmapDrawable) icon).getBitmap();
-        int width = b.getWidth();
-        int height = b.getHeight();
+    public static Drawable compose(Resources resources, Drawable icon, Context context, Drawable iconBack,
+            Drawable iconMask, Drawable iconUpon, float scale, int iconSize, float density) {
+        int size = Math.round(iconSize * density);
+        final Canvas canvas = new Canvas();
+        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
+                Paint.FILTER_BITMAP_FLAG));
+
+        int width = 0, height = 0;
+        if (icon instanceof BitmapDrawable) {
+            Bitmap b = ((BitmapDrawable) icon).getBitmap();
+            width = b.getWidth();
+            height = b.getHeight();
+        } else if (icon instanceof VectorDrawable) {
+            width = height = iconSize;
+        }
+        if (width <= 0 || height <= 0) {
+            return icon;
+        }
 
         // TODO
         if (iconBack == null && iconMask == null && iconUpon == null){
@@ -158,7 +189,6 @@ public class BitmapUtils {
 
         Bitmap bitmap = Bitmap.createBitmap(width, height,
                 Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas();
         canvas.setBitmap(bitmap);
 
         Rect oldBounds = new Rect();
@@ -175,30 +205,39 @@ public class BitmapUtils {
             iconMask.draw(canvas);
         }
         if (iconBack != null) {
-            canvas.setBitmap(null);
-            Bitmap finalBitmap = Bitmap.createBitmap(width, height,
-                    Bitmap.Config.ARGB_8888);
-            canvas.setBitmap(finalBitmap);
             iconBack.setBounds(icon.getBounds());
+            ((BitmapDrawable) iconBack).getPaint().setXfermode(
+                    new PorterDuffXfermode(PorterDuff.Mode.DST_OVER));
             iconBack.draw(canvas);
-            canvas.drawBitmap(bitmap, null, icon.getBounds(), null);
-            bitmap = finalBitmap;
         }
         if (iconUpon != null) {
+            iconUpon.setBounds(icon.getBounds());
             iconUpon.draw(canvas);
         }
         icon.setBounds(oldBounds);
         return new BitmapDrawable(resources, bitmap);
     }
 
-    public static BitmapDrawable overlay(Resources resources, Drawable b, Drawable icon, int width, int height) {
-        Bitmap bmp = Bitmap.createBitmap(width, height + 40,
-                Bitmap.Config.ARGB_8888);
-
-        Canvas c = new Canvas(bmp);
-        b.setBounds(0, 40, width, height);
-        b.draw(c);
-        c.drawBitmap(((BitmapDrawable) icon).getBitmap(), 0, 0, null);
-        return new BitmapDrawable(resources, bmp);
+    public static Drawable overlay(Resources resources, Drawable b,
+            Drawable icon, int width, int height) {
+        final Canvas canvas = new Canvas();
+        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
+                Paint.FILTER_BITMAP_FLAG));
+        final Bitmap bmp = Bitmap.createBitmap(width, height + 40,
+                    Bitmap.Config.ARGB_8888);
+        canvas.setBitmap(bmp);
+        if (icon instanceof BitmapDrawable) {
+            b.setBounds(0, 40, width, height);
+            b.draw(canvas);
+            canvas.drawBitmap(((BitmapDrawable) icon).getBitmap(), 0, 0, null);
+            return new BitmapDrawable(resources, bmp);
+        } else if (icon instanceof VectorDrawable) {
+            canvas.setBitmap(bmp);
+            b.setBounds(0, 40, width, height);
+            b.draw(canvas);
+            icon.draw(canvas);
+            return new BitmapDrawable(resources, bmp);
+        }
+        return icon;
     }
 }
