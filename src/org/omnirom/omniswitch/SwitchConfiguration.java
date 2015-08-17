@@ -35,10 +35,15 @@ public class SwitchConfiguration {
     public int mLocation = 0; // 0 = right 1 = left
     public boolean mAnimate = true;
     public int mIconSize = 60; // in dip
+    public int mIconSizeSettings = 60; // in dip
     public int mBigIconSizePx = 100; // in px
     public int mSmallIconSizePx = 60; // in px
     public int mActionIconSize = 60; // in dp
     public int mActionIconSizePx = 60; // in px
+    public int mOverlayIconSizeDp = 30;
+    public int mOverlayIconSizePx = 30;
+    public int mOverlayIconBorderDp = 2;
+    public int mOverlayIconBorderPx = 2;
     public int mIconBorder = 8; // in dp
     public float mDensity;
     public int mMaxWidth;
@@ -74,13 +79,17 @@ public class SwitchConfiguration {
     public boolean mSpeedSwitcher = true;
     public boolean mFilterActive = true;
     public boolean mFilterBoot = true;
+    public boolean mFilterRunning = false;
     public long mFilterTime = 0;
-
+    public boolean mSideHeader = true;
     public static SwitchConfiguration mInstance;
     private WindowManager mWindowManager;
     private int mDefaultHandleHeight;
     private int mLabelFontSizePx;
     public int mMaxHeight;
+    public int mMemDisplaySize;
+    public int mLayoutStyle;
+    public float mThumbRatio = 1.0f;
 
     public static SwitchConfiguration getInstance(Context context) {
         if (mInstance == null) {
@@ -107,12 +116,16 @@ public class SwitchConfiguration {
         mSmallIconSizePx = Math.round(mSmallIconSizePx * mDensity);
         mActionIconSizePx = Math.round(mActionIconSize * mDensity);
         mLevelChangeWidthX = Math.round(60 * mDensity);
+        mOverlayIconSizePx = Math.round(mOverlayIconSizeDp * mDensity);
+        mOverlayIconBorderPx =  Math.round(mOverlayIconBorderDp * mDensity);
         mHorizontalDividerWidth = 0;
         // Render the default thumbnail background
         mThumbnailWidth = (int) context.getResources().getDimensionPixelSize(
                 R.dimen.thumbnail_width);
         mThumbnailHeight = (int) context.getResources()
                 .getDimensionPixelSize(R.dimen.thumbnail_height);
+        mMemDisplaySize = (int) context.getResources().getDimensionPixelSize(
+                R.dimen.ram_display_size);
         updatePrefs(PreferenceManager.getDefaultSharedPreferences(context), "");
     }
 
@@ -179,6 +192,18 @@ public class SwitchConfiguration {
         String favoriteListString = prefs.getString(SettingsActivity.PREF_FAVORITE_APPS, "");
         Utils.parseFavorites(favoriteListString, mFavoriteList);
         mSpeedSwitcher = prefs.getBoolean(SettingsActivity.PREF_SPEED_SWITCHER, true);
+        mFilterBoot = prefs.getBoolean(SettingsActivity.PREF_APP_FILTER_BOOT, true);
+        String filterTimeString = prefs.getString(SettingsActivity.PREF_APP_FILTER_TIME, "0");
+        mFilterTime = Integer.valueOf(filterTimeString);
+        if (mFilterTime != 0) {
+            // value is in hours but we need millisecs
+            mFilterTime = mFilterTime * 3600 * 1000;
+        }
+        String layoutStyle = prefs.getString(SettingsActivity.PREF_LAYOUT_STYLE, "0");
+        mLayoutStyle = Integer.valueOf(layoutStyle);
+        String thumbSize = prefs.getString(SettingsActivity.PREF_THUMB_SIZE, "1.0");
+        mThumbRatio = Float.valueOf(thumbSize);
+        mFilterRunning = prefs.getBoolean(SettingsActivity.PREF_APP_FILTER_RUNNING, false);
     }
 
     public void resetDefaults(Context context) {
@@ -261,5 +286,9 @@ public class SwitchConfiguration {
 
     public int getItemMaxHeight() {
         return mShowLabels ? mMaxHeight + mLabelFontSizePx :  mMaxHeight;
+    }
+
+    public int getOverlayHeaderWidth() {
+        return mOverlayIconSizePx + 2 * mOverlayIconBorderPx;
     }
 }
